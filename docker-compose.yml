@@ -1,0 +1,101 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "3306:3306"
+    networks:
+      - microservices-network
+
+  ########CONSUL
+  consul:
+    image: consul:1.15.4
+    container_name: consul-container
+    ports:
+      - "8500:8500"
+    networks:
+      - microservices-network
+  ##############gaTEWAY
+  gateway-service:
+    build:
+      context: ./gateway-service
+    ports:
+      - "8888:8888"
+    depends_on:
+      - mysql
+      - consul
+    networks:
+      - microservices-network
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_CLOUD_CONSUL_DISCOVERY_ENABLED: 'true'
+  ################CLIENT
+  client-service:
+    container_name: client-service
+    build:
+      context: ./client-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mysql
+      - consul
+      - gateway-service
+    networks:
+      - microservices-network
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_CLOUD_CONSUL_DISCOVERY_ENABLED: 'true'
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/clientdb?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+    healthcheck:
+      test: "/user/bin/mysql --user=root --password=YAhya123456. --execute \"SHOWDATABASES;\""
+      interval: 5s
+      timeout: 2s
+      retries: 100
+
+  voiture-service:
+    build:
+      context: ./voiture-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      - mysql
+      - consul
+      - gateway-service
+    networks:
+      - microservices-network
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_CLOUD_CONSUL_DISCOVERY_ENABLED: 'true'
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/voituredb?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+    healthcheck:
+      test: "/user/bin/mysql --user=root --password=YAhya123456. --execute \"SHOWDATABASES;\""
+      interval: 5s
+      timeout: 2s
+      retries: 100
+
+
+
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "8090:80"
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge

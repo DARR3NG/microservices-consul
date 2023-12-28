@@ -1,0 +1,14 @@
+server:
+  port: 8888
+spring:
+  spring:
+    cloud:
+      consul:
+        host: ${SPRING_CLOUD_CONSUL_HOST:localhost}
+        port: ${SPRING_CLOUD_CONSUL_PORT:8500}
+        discovery: GATEWAY-SERVICE
+  application:
+    name: GATEWAY-SERVICE
+  cloud:
+    discovery:
+      enabled: true
